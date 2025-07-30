@@ -6,10 +6,10 @@
     <title>Weekly Song Selector (Cloud-Enabled)</title>
     <!-- Inter Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js"></script>
+    <!-- Firebase Compatibility SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <!-- PapaParse for CSV parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
@@ -165,7 +165,44 @@
         Loading data...
     </div>
     <script>
-        // Initialize Firebase
+        // --- DOM Elements (Moved to Top to Avoid Initialization Errors) ---
+        const messageBox = document.getElementById('messageBox');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+        const weekStartDateInput = document.getElementById('weekStartDate');
+        const lastPickInfoElement = document.getElementById('lastPickInfo');
+        const lastSavedPickDisplay = document.getElementById('lastSavedPickDisplay');
+        const lastSavedPickDateElement = document.getElementById('lastSavedPickDate');
+        const lastSavedPickListElement = document.getElementById('lastSavedPickList');
+        const songSelectionArea = document.getElementById('songSelectionArea');
+        const savePicksBtn = document.getElementById('savePicksBtn');
+        const clearPicksBtn = document.getElementById('clearPicksBtn');
+        const songLibraryTableBody = document.getElementById('songLibraryTableBody');
+        const weeklyPicksHistoryTableBody = document.getElementById('weeklyPicksHistoryTableBody');
+        const newSongTitleInput = document.getElementById('newSongTitle');
+        const newSongArtistInput = document.getElementById('newSongArtist');
+        const newSongGroupsInput = document.getElementById('newSongGroups');
+        const addSongBtn = document.getElementById('addSongBtn');
+        const csvFileInput = document.getElementById('csvFileInput');
+        const uploadCsvBtn = document.getElementById('uploadCsvBtn');
+        const historyCsvFileInput = document.getElementById('historyCsvFileInput');
+        const uploadHistoryCsvBtn = document.getElementById('uploadHistoryCsvBtn');
+        const downloadLibraryCsvBtn = document.getElementById('downloadLibraryCsvBtn');
+        const downloadHistoryCsvBtn = document.getElementById('downloadHistoryCsvBtn');
+        const editSongModal = document.getElementById('editSongModal');
+        const editSongUuidInput = document.getElementById('editSongUuid');
+        const editSongTitleInput = document.getElementById('editSongTitle');
+        const editSongArtistInput = document.getElementById('editSongArtist');
+        const editSongGroupsInput = document.getElementById('editSongGroups');
+        const saveEditBtn = document.getElementById('saveEditBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const deleteSongBtn = document.getElementById('deleteSongBtn');
+        const slotSettingsArea = document.getElementById('slotSettingsArea');
+        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const sections = document.querySelectorAll('.section');
+
+        // --- Initialize Firebase ---
         try {
             const firebaseConfig = {
   apiKey: "AIzaSyCtSsiOgrPB_-hcjxKaaT4j0TUSK9_FPi8",
@@ -181,7 +218,8 @@
             console.log("Firebase initialized successfully");
         } catch (error) {
             console.error("Firebase initialization error:", error);
-            showMessage("Failed to connect to database. Please check your internet or try again later.", "error");
+            showMessage("Failed to connect to database. Loading default data.", "error");
+            initializeAppWithDefaults();
         }
 
         // --- Global Variables ---
@@ -210,52 +248,12 @@
             []
         ];
 
-        // --- DOM Elements ---
-        const tabButtons = document.querySelectorAll('.tab-button');
-        const sections = document.querySelectorAll('.section');
-        const weekStartDateInput = document.getElementById('weekStartDate');
-        const lastPickInfoElement = document.getElementById('lastPickInfo');
-        const lastSavedPickDisplay = document.getElementById('lastSavedPickDisplay');
-        const lastSavedPickDateElement = document.getElementById('lastSavedPickDate');
-        const lastSavedPickListElement = document.getElementById('lastSavedPickList');
-        const songSelectionArea = document.getElementById('songSelectionArea');
-        const savePicksBtn = document.getElementById('savePicksBtn');
-        const clearPicksBtn = document.getElementById('clearPicksBtn');
-        const messageBox = document.getElementById('messageBox');
-        const songLibraryTableBody = document.getElementById('songLibraryTableBody');
-        const weeklyPicksHistoryTableBody = document.getElementById('weeklyPicksHistoryTableBody');
-        const newSongTitleInput = document.getElementById('newSongTitle');
-        const newSongArtistInput = document.getElementById('newSongArtist');
-        const newSongGroupsInput = document.getElementById('newSongGroups');
-        const addSongBtn = document.getElementById('addSongBtn');
-        const csvFileInput = document.getElementById('csvFileInput');
-        const uploadCsvBtn = document.getElementById('uploadCsvBtn');
-        const historyCsvFileInput = document.getElementById('historyCsvFileInput');
-        const uploadHistoryCsvBtn = document.getElementById('uploadHistoryCsvBtn');
-        const downloadLibraryCsvBtn = document.getElementById('downloadLibraryCsvBtn');
-        const downloadHistoryCsvBtn = document.getElementById('downloadHistoryCsvBtn');
-        const editSongModal = document.getElementById('editSongModal');
-        const editSongUuidInput = document.getElementById('editSongUuid');
-        const editSongTitleInput = document.getElementById('editSongTitle');
-        const editSongArtistInput = document.getElementById('editSongArtist');
-        const editSongGroupsInput = document.getElementById('editSongGroups');
-        const saveEditBtn = document.getElementById('saveEditBtn');
-        const cancelEditBtn = document.getElementById('cancelEditBtn');
-        const deleteSongBtn = document.getElementById('deleteSongBtn');
-        const slotSettingsArea = document.getElementById('slotSettingsArea');
-        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
-        const loadingOverlay = document.getElementById('loadingOverlay');
-        const userIdDisplay = document.getElementById('userIdDisplay');
-
         // --- Utility Functions ---
-        function generateUUID() {
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
-        }
-
         function showMessage(message, type = "info") {
+            if (!messageBox) {
+                console.error("messageBox element not found");
+                return;
+            }
             messageBox.textContent = message;
             messageBox.className = 'message-box show';
             messageBox.classList.remove('bg-green-100', 'border-green-500', 'text-green-800',
@@ -287,11 +285,11 @@
         }
 
         function showLoading() {
-            loadingOverlay.classList.remove('hidden');
+            if (loadingOverlay) loadingOverlay.classList.remove('hidden');
         }
 
         function hideLoading() {
-            loadingOverlay.classList.add('hidden');
+            if (loadingOverlay) loadingOverlay.classList.add('hidden');
         }
 
         function escapeCsv(value) {
@@ -318,6 +316,13 @@
                 console.error("CSV download error:", error);
                 showMessage("Failed to download CSV.", "error");
             }
+        }
+
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
         }
 
         // --- Firestore Operations ---
@@ -363,13 +368,15 @@
                 } else {
                     auth.signInAnonymously().catch(error => {
                         console.error("Authentication error:", error);
-                        showMessage(`Authentication error: ${error.message}`, "error");
+                        showMessage(`Authentication error: ${error.message}. Loading default data.`, "error");
+                        initializeAppWithDefaults();
                     });
                 }
             });
         } catch (error) {
             console.error("Auth state change error:", error);
-            showMessage("Failed to initialize authentication.", "error");
+            showMessage("Failed to initialize authentication. Loading default data.", "error");
+            initializeAppWithDefaults();
         }
 
         // --- Core Application Logic ---
@@ -391,10 +398,27 @@
                 updateAllSongDropdowns();
             } catch (error) {
                 console.error("App initialization error:", error);
-                showMessage("Failed to initialize app data.", "error");
+                showMessage("Failed to initialize app data. Loading default data.", "error");
+                initializeAppWithDefaults();
             } finally {
                 hideLoading();
             }
+        }
+
+        function initializeAppWithDefaults() {
+            songLibrary = defaultSongLibrary.map(song => ({ ...song, uuid: generateUUID() }));
+            weeklyPicksHistory = [];
+            allowedGroupsForSlots = defaultAllowedGroupsForSlots;
+            console.log("Initialized with default data:", { songLibrary, weeklyPicksHistory, allowedGroupsForSlots });
+            userIdDisplay.textContent = "User: Offline (Default Data)";
+            renderSongLibrary();
+            renderWeeklyPicksHistory();
+            initializeCurrentWeekSelection();
+            renderLastSavedPick();
+            renderSettingsInputs();
+            updateAllSongDropdowns();
+            hideLoading();
+            showMessage("App loaded with default data (offline mode).", "warning");
         }
 
         function renderSongLibrary() {
