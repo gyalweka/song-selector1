@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Song Selector (Local Only)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 16px; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column; /* Changed to column for tabs */
+            gap: 30px;
+        }
+        .section {
+            background-color: #f9fafb; /* Slightly darker background for sections */
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+            display: none; /* Hidden by default for tabs */
+        }
+        .section.active {
+            display: flex; /* Show active section */
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+        .sub-section {
+            flex: 1;
+            min-width: 300px;
+        }
+        .section-full-width {
+            flex: 0 0 100%; /* Take full width */
+        }
+        select, input[type="date"], input[type="text"], input[type="file"], textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1; /* Light gray border */
+            border-radius: 8px;
+            background-color: #ffffff;
+            font-size: 1rem;
+            color: #334155; /* Darker text */
+            appearance: none; /* Remove default arrow for selects */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            /* Custom arrow for select only */
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236B7280%22%20d%3D%22M287%2C114.7L154.7%2C27.3c-4.4-4.7-11.8-4.7-16.2%2C0L5.4%2C114.7c-4.4%2C4.7-4.4%2C12.4%2C0%2C17.1l132.3%2C87.4c4.4%2C4.7%2C11.8%2C4.7%2C16.2%2C0l132.3-87.4C291.4%2C127.1%2C291.4%2C119.4%2C287%2C114.7z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 12px;
+        }
+        input[type="date"], input[type="text"], input[type="file"], textarea {
+            background-image: none; /* Remove custom arrow for other inputs */
+            cursor: text;
+        }
+        select {
+            cursor: pointer;
+        }
+        select:focus, input[type="date"]:focus, input[type="text"]:focus, textarea:focus, input[type="file"]:focus {
+            outline: none;
+            border-color: #6366f1; /* Indigo focus ring */
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        .song-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        .song-row .type-display {
+            flex: 1;
+            padding: 10px;
+            background-color: #e2e8f0; /* Lighter gray for type display */
+            border-radius: 8px;
+            color: #475569; /* Slate text */
+            font-size: 0.9rem;
+            min-height: 42px; /* Match select height */
+            display: flex;
+            align-items: center;
+        }
+        .highlight-repeat {
+            background-color: #fee2e2; /* Red-100 for highlight */
+            border-color: #ef4444; /* Red-500 border */
+        }
+        .highlight-repeat:focus {
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+        }
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+        button.primary {
+            background-color: #6366f1; /* Indigo-500 */
+            color: white;
+        }
+        button.primary:hover {
+            background-color: #4f46e5; /* Indigo-600 */
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        button.secondary {
+            background-color: #e2e8f0; /* Slate-200 */
+            color: #334155; /* Slate-700 */
+        }
+        button.secondary:hover {
+            background-color: #cbd5e1; /* Slate-300 */
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        .message-box {
+            background-color: #fffbeb; /* Amber-100 */
+            border: 1px solid #f59e0b; /* Amber-500 */
+            color: #b45309; /* Amber-800 */
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 500;
+            display: none; /* Hidden by default */
+        }
+        .message-box.show {
+            display: block;
+        }
+        .history-table-container {
+            max-height: 400px; /* Fixed height for scrollable history */
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .history-table th, .history-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .history-table th {
+            background-color: #f1f5f9; /* Slate-100 */
+            color: #475569;
+            font-weight: 600;
+            position: sticky; /* Sticky header */
+            top: 0;
+            z-index: 1;
+        }
+        .history-table tr:last-child td {
+            border-bottom: none;
+        }
+        .history-table tbody tr:hover {
+            background-color: #f8fafc; /* Lighter hover effect */
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            color: #475569; /* Slate-700 */
+            font-size: 0.875rem; /* sm font size */
+            font-weight: 500; /* medium font weight */
+            margin-bottom: 8px;
+        }
+
+        /* Tab styles */
+        .tab-nav {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0; /* Light gray border */
+            width: 100%;
+        }
+        .tab-button {
+            padding: 12px 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #64748b; /* Slate-500 */
+            background-color: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            margin-bottom: -2px; /* Overlap with border-bottom */
+        }
+        .tab-button:hover {
+            color: #475569; /* Slate-700 */
+        }
+        .tab-button.active {
+            color: #6366f1; /* Indigo-500 */
+            border-bottom-color: #6366f1; /* Indigo-500 */
+        }
+        .library-actions-cell {
+            white-space: nowrap; /* Prevent buttons from wrapping */
+            width: 1%; /* Shrink column */
+        }
+        .library-actions-cell button {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            margin-left: 5px;
+            border-radius: 6px;
+            box-shadow: none;
+            transition: background-color 0.2s;
+        }
+        .library-actions-cell button.edit-btn {
+            background-color: #6366f1; /* Indigo-500 */
+            color: white;
+        }
+        .library-actions-cell button.edit-btn:hover {
+            background-color: #4f46e5; /* Indigo-600 */
+        }
+        /* Removed delete-btn from main table */
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 500px;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease-in-out;
+        }
+        .modal.show .modal-content {
+            transform: translateY(0);
+        }
+        .modal-content h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 20px;
+        }
+        .modal-content .button-group {
+            margin-top: 25px;
+            justify-content: flex-end; /* Align buttons to the right */
+        }
+        .modal-content .button-group button {
+            margin-left: 10px; /* Space between modal buttons */
+        }
+        /* Delete button within modal */
+        #deleteSongBtn {
+            background-color: #ef4444; /* Red-500 */
+            color: white;
+        }
+        #deleteSongBtn:hover {
+            background-color: #dc2626; /* Red-600 */
+        }
+
+        /* Last Pick Display Styles */
+        .last-pick-display {
+            background-color: #e0f2fe; /* Light blue background */
+            border: 1px solid #90cdf4; /* Blue border */
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        .last-pick-display h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2b6cb0; /* Darker blue text */
+            margin-bottom: 10px;
+        }
+        .last-pick-display ul {
+            list-style: decimal; /* Numbered list */
+            padding-left: 20px;
+            color: #4a5568; /* Gray text */
+        }
+        .last-pick-display li {
+            margin-bottom: 5px;
+        }
+
+        /* Settings Section specific styles */
+        .settings-slot-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background-color: #fcfdfe;
+        }
+        .settings-slot-group label {
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 10px;
+        }
+        .settings-slot-group p.hint {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 5px;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            font-size: 1.5rem;
+            color: #6366f1;
+            font-weight: 600;
+            transition: opacity 0.3s ease-in-out;
+            opacity: 1;
+            visibility: visible;
+        }
+        .loading-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .user-id-display {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #f1f5f9;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: #475569;
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            max-width: 150px; /* Limit width */
+            overflow: hidden; /* Hide overflow */
+            text-overflow: ellipsis; /* Add ellipsis */
+            white-space: nowrap; /* Prevent wrapping */
+        }
+
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            .tab-button {
+                font-size: 1rem;
+                padding: 10px 15px;
+            }
+            .section.active {
+                flex-direction: column;
+                gap: 20px;
+            }
+            .sub-section {
+                min-width: unset;
+                width: 100%;
+            }
+            .song-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .song-row select, .song-row .type-display {
+                width: 100%;
+            }
+            .button-group {
+                flex-direction: column;
+            }
+            .library-actions-cell {
+                text-align: right;
+            }
+            .library-actions-cell button {
+                margin-left: 0;
+                margin-top: 5px;
+                width: 100%;
+            }
+            .modal-content {
+                padding: 20px;
+            }
+            .user-id-display {
+                position: static; /* Remove absolute positioning */
+                margin-top: 10px;
+                text-align: center;
+                max-width: none; /* Allow full width */
+                white-space: normal; /* Allow wrapping */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 section-full-width text-center">Weekly Song Selector</h1>
+
+        <!-- User ID Display -->
+        <div id="userIdDisplay" class="user-id-display">User ID: Local Data</div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-button active" data-tab="picks">Weekly Picks</button>
+            <button class="tab-button" data-tab="library">Manage Library</button>
+            <button class="tab-button" data-tab="history">History</button>
+            <button class="tab-button" data-tab="settings">Settings</button>
+        </div>
+
+        <!-- Weekly Song Selection Section (Picks Tab) -->
+        <div id="picks-tab" class="section active">
+            <div class="sub-section">
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">Current Week's Picks</h2>
+                <div class="mb-4">
+                    <label for="weekStartDate" class="block text-gray-600 text-sm font-medium mb-2">Week Start Date:</label>
+                    <input type="date" id="weekStartDate" class="focus:ring-indigo-500 focus:border-indigo-500">
+                    <p id="lastPickInfo" class="text-xs text-gray-500 mt-1 hidden"></p>
+                </div>
+
+                <div id="songSelectionArea">
+                    <!-- Song selection rows will be generated here by JavaScript -->
+                </div>
+
+                <div id="messageBox" class="message-box"></div>
+
+                <div class="button-group">
+                    <button id="savePicksBtn" class="primary">Save Weekly Picks</button>
+                    <button id="clearPicksBtn" class="secondary">Clear Current Picks</button>
+                </div>
+            </div>
+
+            <!-- Last Saved Weekly Pick Display -->
+            <div class="sub-section">
+                <div id="lastSavedPickDisplay" class="last-pick-display hidden">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">Last Saved Weekly Pick (<span id="lastSavedPickDate"></span>)</h3>
+                    <ul id="lastSavedPickList">
+                        <!-- Songs will be listed here -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manage Library Section (Library Tab) -->
+        <div id="library-tab" class="section">
+            <div class="sub-section section-full-width">
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">Your Song Library</h2>
+                <div class="history-table-container">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Artist</th>
+                                <th>Groups</th>
+                                <th class="library-actions-cell">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="songLibraryTableBody">
+                            <!-- Song data will be loaded here by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="button-group justify-end">
+                    <button id="downloadLibraryCsvBtn" class="secondary">Download Library CSV</button>
+                </div>
+            </div>
+
+            <div class="sub-section">
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">Add New Song</h2>
+                <div class="form-group">
+                    <label for="newSongTitle">Song Title:</label>
+                    <input type="text" id="newSongTitle" placeholder="e.g., My New Jam" class="focus:ring-indigo-500 focus:border-indigo-500 rounded-md">
+                </div>
+                <div class="form-group">
+                    <label for="newSongArtist">Artist:</label>
+                    <input type="text" id="newSongArtist" placeholder="e.g., The Awesome Band" class="focus:ring-indigo-500 focus:border-indigo-500 rounded-md">
+                </div>
+                <div class="form-group">
+                    <label for="newSongGroups">Groups (comma-separated):</label>
+                    <textarea id="newSongGroups" rows="2" placeholder="e.g., Upbeat, Pop, Dance" class="focus:ring-indigo-500 focus:border-indigo-500 rounded-md"></textarea>
+                </div>
+                <button id="addSongBtn" class="primary w-full">Add Song to Library</button>
+            </div>
+
+            <div class="sub-section">
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">Upload Songs (CSV)</h2>
+                <p class="text-sm text-gray-600 mb-4">Upload a CSV file with columns: `Title`, `Artist`, `Groups`. Groups should be comma-separated in the CSV cell. Existing songs with matching titles will be updated.</p>
+                <div class="form-group">
+                    <label for="csvFileInput">Select CSV File:</label>
+                    <input type="file" id="csvFileInput" accept=".csv" class="focus:ring-indigo-500 focus:border-indigo-500 rounded-md">
+                </div>
+                <button id="uploadCsvBtn" class="primary w-full">Upload CSV</button>
+            </div>
+        </div>
+
+        <!-- Weekly Picks History Section (History Tab) -->
+        <div id="history-tab" class="section">
+            <div class="sub-section section-full-width">
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">Weekly Picks History</h2>
+                <div class="history-table-container">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Week</th>
+                                <th>Song 1</th>
+                                <th>Song 2</th>
+                                <th>Song 3</th>
+                                <th>Song 4</th>
+                                <th>Song 5</th>
+                            </tr>
+                        </thead>
+                        <tbody id="weeklyPicksHistoryTableBody">
+                            <!-- History data will be loaded here by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="button-group justify-end">
+                    <button id="downloadHistoryCsvBtn" class="secondary">Download History CSV</button>
+                </div>
+            </div>
+
+            <div class="sub-section">
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">Upload History (CSV)</h2>
+                <p class="text-sm text-gray-600 mb-4">Upload a CSV file with columns: `Week` (YYYY-MM-DD), `Song 1`, `Song 2`, etc. Existing weeks will be updated; new weeks will be added.</p>
+                <div class="form-group">
+                    <label for="historyCsvFileInput">Select History CSV File:</label>
+                    <input type="file" id="historyCsvFileInput" accept=".csv" class="focus:ring-indigo-500 focus:border-indigo-500 rounded-md">
+                </div>
+                <button id="uploadHistoryCsvBtn" class="primary w-full">Upload History CSV</button>
+            </div>
+        </div>
+
+        <!-- Settings Section (Settings Tab) -->
+        <div id="settings-tab" class="section">
+            <div class="sub-section section-full-width">
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">Configure Song Selection Slots</h2>
+                <p class="text-sm text-gray-600 mb-6">Define which song groups are allowed in each of the 5 weekly selection dropdowns. Separate multiple groups with commas (e.g., `Worship, Traditional`). Leave a field empty to allow all songs in that slot.</p>
+
+                <div id="slotSettingsArea">
+                    <!-- Settings inputs for each slot will be generated here -->
+                </div>
+
+                <div class="button-group">
+                    <button id="saveSettingsBtn" class="primary">Save Settings</button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Edit Song Modal -->
+        <div id="editSongModal" class="modal">
+            <div class="modal-content">
+                <h3 class="text-xl font-semibold text-gray-700 mb-4">Edit Song Details</h3>
+                <input type="hidden" id="editSongUuid">
+                <div class="form-group">
+                    <label for="editSongTitle">Song Title:</label>
+                    <input type="text" id="editSongTitle" class="focus:ring-indigo-500 focus:border-indigo-500 rounded-md">
+                </div>
+                <div class="form-group">
+                    <label for="editSongArtist">Artist:</label>
+                    <input type="text" id="editSongArtist" class="focus:ring-indigo-500 focus:border-indigo-500 rounded-md">
+                </div>
+                <div class="form-group">
+                    <label for="editSongGroups">Groups (comma-separated):</label>
+                    <textarea id="editSongGroups" rows="2" class="focus:ring-indigo-500 focus:border-indigo-500 rounded-md"></textarea>
+                </div>
+                <div class="button-group">
+                    <button id="deleteSongBtn" class="delete-btn">Delete Song</button>
+                    <button id="cancelEditBtn" class="secondary">Cancel</button>
+                    <button id="saveEditBtn" class="primary">Save Changes</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        Loading data...
+    </div>
+
+    <script>
+        // --- Global Variables (No Firebase related globals) ---
+        let isAppInitialized = false; // Flag to ensure overall app initialization runs once
+
+        // --- Data Definitions ---
+        // Default song library if no data is found in local storage
+        const defaultSongLibrary = [
+            { title: "Amazing Grace", artist: "John Newton", groups: ["Worship", "Traditional", "Hymn"] },
+            { title: "Happy Tune", artist: "Indie Band", groups: ["Upbeat", "New Release"] },
+            { title: "Quiet Reflection", artist: "Solo Piano", groups: ["Chill", "Acoustic", "Instrumental"] },
+            { title: "Joyful Noise", artist: "Gospel Choir", groups: ["Worship", "Upbeat"] },
+            { title: "Old Gold", artist: "Classic Rock", groups: ["Upbeat", "Old School"] },
+            { title: "Serene Morning", artist: "Ambient Artist", groups: ["Chill", "Instrumental"] },
+            { title: "My Sweet Lord", artist: "George Harrison", groups: ["Worship", "Classic", "Pop"] },
+            { title: "Groove Machine", artist: "Funksters", groups: ["Upbeat", "Dance"] },
+            { title: "Echoes of Time", artist: "Mystic Ensemble", groups: ["Chill", "World"] },
+            { title: "Sunrise Anthem", artist: "Pop Collective", groups: ["Upbeat", "Inspirational"] },
+            { title: "Midnight Blues", artist: "Jazz Cats", groups: ["Chill", "Blues", "Instrumental"] },
+            { title: "Eternal Hope", artist: "Choir of Angels", groups: ["Worship", "Classical"] },
+            { title: "Rhythmic Journey", artist: "Percussion Masters", groups: ["Upbeat", "World", "Instrumental"] },
+            { title: "Gentle Rain", artist: "Nature Sounds", groups: ["Chill", "Ambient"] },
+            { title: "Spirit Rising", artist: "Soul Singers", groups: ["Worship", "Soul"] },
+            { title: "Instrumental Piece", artist: "", groups: ["Instrumental", "Background"] } // Example with blank artist
+        ];
+
+        // Default configuration for song group restrictions for each slot.
+        const defaultAllowedGroupsForSlots = [
+            ["Worship"], // Slot 1 (Song 1)
+            ["Upbeat", "Dance"], // Slot 2 (Song 2)
+            ["Chill", "Instrumental"], // Slot 3 (Song 3)
+            [], // Slot 4 (Song 4) - Empty array means all songs are available
+            []  // Slot 5 (Song 5) - Empty array means all songs are available
+        ];
+
+        // Global variables for application state (synced with local storage)
+        let songLibrary = [];
+        let weeklyPicksHistory = [];
+        let allowedGroupsForSlots = [];
+
+        const NUM_SONG_PICKS = 5; // Number of songs to pick each week
+        const MONTH_IN_MS = 30 * 24 * 60 * 60 * 1000; // Approximately 30 days in milliseconds
+
+        // --- DOM Elements ---
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const sections = document.querySelectorAll('.section');
+
+        const weekStartDateInput = document.getElementById('weekStartDate');
+        const lastPickInfoElement = document.getElementById('lastPickInfo');
+        const lastSavedPickDisplay = document.getElementById('lastSavedPickDisplay');
+        const lastSavedPickDateElement = document.getElementById('lastSavedPickDate');
+        const lastSavedPickListElement = document.getElementById('lastSavedPickList');
+
+        const songSelectionArea = document.getElementById('songSelectionArea');
+        const savePicksBtn = document.getElementById('savePicksBtn');
+        const clearPicksBtn = document.getElementById('clearPicksBtn');
+        const messageBox = document.getElementById('messageBox');
+        const songLibraryTableBody = document.getElementById('songLibraryTableBody');
+        const weeklyPicksHistoryTableBody = document.getElementById('weeklyPicksHistoryTableBody');
+
+        // New song input elements
+        const newSongTitleInput = document.getElementById('newSongTitle');
+        const newSongArtistInput = document.getElementById('newSongArtist');
+        const newSongGroupsInput = document.getElementById('newSongGroups');
+        const addSongBtn = document.getElementById('addSongBtn');
+
+        // CSV upload elements (for song library)
+        const csvFileInput = document.getElementById('csvFileInput');
+        const uploadCsvBtn = document.getElementById('uploadCsvBtn');
+
+        // New CSV elements for history
+        const historyCsvFileInput = document.getElementById('historyCsvFileInput');
+        const uploadHistoryCsvBtn = document.getElementById('uploadHistoryCsvBtn');
+
+        // New CSV download buttons
+        const downloadLibraryCsvBtn = document.getElementById('downloadLibraryCsvBtn');
+        const downloadHistoryCsvBtn = document.getElementById('downloadHistoryCsvBtn');
+
+        // Edit Song Modal elements
+        const editSongModal = document.getElementById('editSongModal');
+        const editSongUuidInput = document.getElementById('editSongUuid');
+        const editSongTitleInput = document.getElementById('editSongTitle');
+        const editSongArtistInput = document.getElementById('editSongArtist');
+        const editSongGroupsInput = document.getElementById('editSongGroups');
+        const saveEditBtn = document.getElementById('saveEditBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const deleteSongBtn = document.getElementById('deleteSongBtn');
+
+        // Settings tab elements
+        const slotSettingsArea = document.getElementById('slotSettingsArea');
+        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+
+        // Loading overlay and User ID display
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+
+
+        // --- Utility Functions ---
+
+        /**
+         * Generates a unique ID (UUID).
+         * @returns {string} A UUID string.
+         */
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0,
+                    v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        /**
+         * Displays a message in the message box.
+         * @param {string} message - The message to display.
+         * @param {string} type - "success", "warning", or "error" for styling.
+         */
+        function showMessage(message, type = "info") {
+            messageBox.textContent = message;
+            messageBox.className = 'message-box show'; // Reset classes
+            messageBox.classList.remove('bg-green-100', 'border-green-500', 'text-green-800',
+                                        'bg-yellow-100', 'border-yellow-500', 'text-yellow-800',
+                                        'bg-red-100', 'border-red-500', 'text-red-800',
+                                        'bg-blue-100', 'border-blue-500', 'text-blue-800'); // Remove previous type classes
+            if (type === "success") {
+                messageBox.classList.add('bg-green-100', 'border-green-500', 'text-green-800');
+            } else if (type === "warning") {
+                messageBox.classList.add('bg-yellow-100', 'border-yellow-500', 'text-yellow-800');
+            } else if (type === "error") {
+                messageBox.classList.add('bg-red-100', 'border-red-500', 'text-red-800');
+            } else { // Default info
+                messageBox.classList.add('bg-blue-100', 'border-blue-500', 'text-blue-800');
+            }
+            // Hide message after 5 seconds
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, 5000);
+        }
+
+        /**
+         * Formats a date object into ISO (YYYY-MM-DD) string.
+         * @param {Date} date - The date object.
+         * @returns {string} Formatted date string.
+         */
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        /**
+         * Shows the loading overlay.
+         */
+        function showLoading() {
+            loadingOverlay.classList.remove('hidden');
+        }
+
+        /**
+         * Hides the loading overlay.
+         */
+        function hideLoading() {
+            loadingOverlay.classList.add('hidden');
+        }
+
+        /**
+         * Escapes a string for CSV cell, handling commas and quotes.
+         * @param {string} value - The string value to escape.
+         * @returns {string} The escaped string.
+         */
+        function escapeCsv(value) {
+            if (value === null || value === undefined) {
+                return '';
+            }
+            let stringValue = String(value);
+            // If the value contains a comma, double quote, or newline, enclose it in double quotes
+            // and escape any existing double quotes by doubling them.
+            if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+                return `"${stringValue.replace(/"/g, '""')}"`;
+            }
+            return stringValue;
+        }
+
+        /**
+         * Triggers a CSV file download.
+         * @param {string} filename - The name of the file to download.
+         * @param {string} csvString - The CSV content as a string.
+         */
+        function downloadCSV(filename, csvString) {
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            if (link.download !== undefined) { // Feature detection for download attribute
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                // Fallback for browsers that don't support download attribute (rare now)
+                window.open('data:text/csv;charset=utf-8,' + encodeURIComponent(csvString));
+            }
+        }
+
+
+        // --- Local Storage Operations ---
+
+        /**
+         * Loads data from local storage.
+         * @param {string} key - The key for the local storage item.
+         * @param {any} defaultValue - The default value if not found.
+         * @returns {any} The parsed data or default value.
+         */
+        function loadFromLocalStorage(key, defaultValue) {
+            try {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : defaultValue;
+            } catch (e) {
+                console.error(`Error loading from localStorage for key "${key}":`, e);
+                return defaultValue;
+            }
+        }
+
+        /**
+         * Saves data to local storage.
+         * @param {string} key - The key for the local storage item.
+         * @param {any} data - The data to save.
+         */
+        function saveToLocalStorage(key, data) {
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+            } catch (e) {
+                console.error(`Error saving to localStorage for key "${key}":`, e);
+                showMessage("Warning: Local data saving failed. Your browser might be full or in private mode.", "warning");
+            }
+        }
+
+        // --- Core Application Logic ---
+
+        /**
+         * Initializes the app, loading data from local storage.
+         */
+        function initializeApp() {
+            if (isAppInitialized) {
+                console.log("App already initialized, skipping re-initialization.");
+                return;
+            }
+            isAppInitialized = true; // Set flag to true
+
+            showLoading();
+
+            // Load data from Local Storage
+            songLibrary = loadFromLocalStorage('songLibrary', defaultSongLibrary.map(song => ({ ...song, uuid: generateUUID() })));
+            weeklyPicksHistory = loadFromLocalStorage('weeklyPicksHistory', []);
+            allowedGroupsForSlots = loadFromLocalStorage('allowedGroupsForSlots', defaultAllowedGroupsForSlots);
+
+            console.log("Data loaded from Local Storage.");
+            showMessage("App is running in local storage mode. Data is saved in your browser.", "info");
+
+            // Render UI with the determined data
+            renderSongLibrary();
+            renderWeeklyPicksHistory();
+            initializeCurrentWeekSelection();
+            renderLastSavedPick();
+            renderSettingsInputs();
+            updateAllSongDropdowns();
+
+            hideLoading(); // Hide loading after all data is processed and UI rendered
+        }
+
+        /**
+         * Renders the song library table with edit actions.
+         */
+        function renderSongLibrary() {
+            songLibraryTableBody.innerHTML = ''; // Clear existing
+            // Sort song library alphabetically by title
+            const sortedSongs = [...songLibrary].sort((a, b) => a.title.localeCompare(b.title));
+
+            if (sortedSongs.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="4" class="text-center text-gray-500 py-4">No songs in library. Add some!</td>`;
+                songLibraryTableBody.appendChild(row);
+                return;
+            }
+
+            sortedSongs.forEach(song => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${escapeCsv(song.title)}</td>
+                    <td>${escapeCsv(song.artist)}</td>
+                    <td>${escapeCsv(song.groups.join(', '))}</td>
+                    <td class="library-actions-cell">
+                        <button class="edit-btn" data-uuid="${song.uuid}">Edit</button>
+                    </td>
+                `;
+                songLibraryTableBody.appendChild(row);
+            });
+
+            // Attach event listeners to new buttons
+            document.querySelectorAll('.edit-btn').forEach(button => {
+                button.addEventListener('click', (e) => openEditModal(e.target.dataset.uuid));
+            });
+        }
+
+        /**
+         * Populates the dropdown with song titles, optionally filtered by allowed groups.
+         * @param {HTMLSelectElement} selectElement - The select element to populate.
+         * @param {string[]} [allowedGroups=[]] - An array of group names to filter by. If empty, all songs are shown.
+         */
+        function populateSongDropdown(selectElement, allowedGroups = []) {
+            selectElement.innerHTML = '<option value="">-- Select a Song --</option>'; // Default option
+
+            let filteredSongs = [];
+            if (allowedGroups.length === 0 || allowedGroups.every(g => g === '')) {
+                // If no specific groups are allowed or all group strings are empty, show all songs
+                filteredSongs = [...songLibrary];
+            } else {
+                // Filter songs: a song is included if it has at least one of the allowed groups
+                filteredSongs = songLibrary.filter(song =>
+                    song.groups.some(group => allowedGroups.includes(group))
+                );
+            }
+
+            // Sort filtered songs alphabetically by title for dropdowns
+            const sortedSongs = [...filteredSongs].sort((a, b) => a.title.localeCompare(b.title));
+
+            sortedSongs.forEach(song => {
+                const option = document.createElement('option');
+                option.value = song.uuid; // Store UUID as value, title as text
+                option.textContent = song.title;
+                selectElement.appendChild(option);
+            });
+        }
+
+        /**
+         * Updates all song selection dropdowns across the app.
+         * This is called after adding/uploading new songs, or when group restrictions change.
+         */
+        function updateAllSongDropdowns() {
+            for (let i = 0; i < NUM_SONG_PICKS; i++) {
+                const select = document.getElementById(`songSelect${i + 1}`);
+                if (select) { // Check if the element exists
+                    const currentSelectedUuid = select.value; // Preserve current selection (UUID)
+                    // Ensure allowedGroupsForSlots[i] exists and is an array
+                    const groupsForThisSlot = (allowedGroupsForSlots[i] && Array.isArray(allowedGroupsForSlots[i])) ? allowedGroupsForSlots[i] : [];
+                    populateSongDropdown(select, groupsForThisSlot);
+                    select.value = currentSelectedUuid; // Restore selection
+                    // Trigger change to update type display and highlighting
+                    select.dispatchEvent(new Event('change'));
+                }
+            }
+        }
+
+
+        /**
+         * Finds a song by UUID in the song library.
+         * @param {string} uuid - The UUID of the song.
+         * @returns {object|undefined} The song object or undefined if not found.
+         */
+        function getSongByUUID(uuid) {
+            return songLibrary.find(song => song.uuid === uuid);
+        }
+
+        /**
+         * Finds a song by title in the song library (case-insensitive).
+         * Used primarily for checking duplicates during add/upload.
+         * @param {string} title - The title of the song.
+         * @returns {object|undefined} The song object or undefined if not found.
+         */
+        function getSongByTitle(title) {
+            return songLibrary.find(song => song.title.toLowerCase() === title.toLowerCase());
+        }
+
+        /**
+         * Updates the displayed song type for a given selection.
+         * @param {HTMLSelectElement} selectElement - The song selection dropdown.
+         * @param {HTMLElement} typeDisplayElement - The element to display the type.
+         */
+        function updateSongType(selectElement, typeDisplayElement) {
+            const selectedSongUuid = selectElement.value;
+            const song = getSongByUUID(selectedSongUuid);
+            typeDisplayElement.textContent = song ? song.groups.join(', ') : '';
+        }
+
+        /**
+         * Checks if a song (by UUID) has been played within the last month.
+         * @param {string} songUuid - The UUID of the song to check.
+         * @param {Date} currentWeekStartDate - The start date of the current week's picks.
+         * @returns {boolean} True if the song was played in the last month, false otherwise.
+         */
+        function isSongPlayedRecently(songUuid, currentWeekStartDate) {
+            const oneMonthAgo = currentWeekStartDate.getTime() - MONTH_IN_MS;
+
+            // Filter history to only include picks within the last month (relative to current week)
+            // Exclude future picks (picks after currentWeekStartDate)
+            const recentPicks = weeklyPicksHistory.filter(week => {
+                const pickDate = new Date(week.date);
+                return pickDate.getTime() >= oneMonthAgo && pickDate.getTime() < currentWeekStartDate.getTime();
+            });
+
+            // Check if the song UUID exists in any of these recent picks
+            for (const week of recentPicks) {
+                if (week.songUuids.includes(songUuid)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Initializes the current week's song selection dropdowns and event listeners.
+         * Populates with the most recent pick if available.
+         */
+        function initializeCurrentWeekSelection() {
+            songSelectionArea.innerHTML = ''; // Clear previous selections
+
+            let latestPick = null;
+            if (weeklyPicksHistory.length > 0) {
+                // Sort history by date, newest first, to get the absolute latest pick
+                const sortedHistory = [...weeklyPicksHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
+                latestPick = sortedHistory[0];
+            }
+
+            if (latestPick) {
+                weekStartDateInput.value = latestPick.date; // Set date to the latest pick's date
+                lastPickInfoElement.textContent = `Pre-filled from picks saved on: ${formatDate(new Date(latestPick.date))}`;
+                lastPickInfoElement.classList.remove('hidden');
+            } else {
+                weekStartDateInput.value = formatDate(new Date()); // Default to today's date
+                lastPickInfoElement.classList.add('hidden'); // Hide if no history
+            }
+
+
+            for (let i = 0; i < NUM_SONG_PICKS; i++) {
+                const songRow = document.createElement('div');
+                songRow.className = 'song-row';
+
+                const select = document.createElement('select');
+                select.id = `songSelect${i + 1}`;
+                select.className = 'flex-grow'; // Tailwind flex-grow class
+                const groupsForThisSlot = allowedGroupsForSlots[i] || []; // Get specific groups for this slot
+                populateSongDropdown(select, groupsForThisSlot);
+
+                const typeDisplay = document.createElement('div');
+                typeDisplay.id = `songType${i + 1}`;
+                typeDisplay.className = 'type-display';
+
+                select.addEventListener('change', () => {
+                    updateSongType(select, typeDisplay);
+                    checkAllCurrentPicksForRepeats(); // Re-check all when one changes
+                });
+
+                songRow.appendChild(select);
+                songRow.appendChild(typeDisplay);
+                songSelectionArea.appendChild(songRow);
+
+                // If there's a latest pick, set the selected song
+                if (latestPick && latestPick.songUuids[i]) {
+                    select.value = latestPick.songUuids[i];
+                    updateSongType(select, typeDisplay); // Update type display immediately
+                }
+            }
+            // After populating, trigger a check for repeats based on the loaded songs
+            checkAllCurrentPicksForRepeats();
+        }
+
+        /**
+         * Checks all currently selected songs for recent repeats and applies highlighting.
+         */
+        function checkAllCurrentPicksForRepeats() {
+            const currentWeekStartDate = new Date(weekStartDateInput.value);
+            let hasRepeats = false;
+
+            for (let i = 0; i < NUM_SONG_PICKS; i++) {
+                const select = document.getElementById(`songSelect${i + 1}`);
+                const songUuid = select.value;
+
+                // Remove previous highlight
+                select.classList.remove('highlight-repeat');
+
+                if (songUuid && isSongPlayedRecently(songUuid, currentWeekStartDate)) {
+                    select.classList.add('highlight-repeat');
+                    hasRepeats = true;
+                }
+            }
+
+            if (hasRepeats) {
+                showMessage("One or more selected songs have been played in the last month. Highlighted in red.", "warning");
+            } else {
+                // Only hide if there are no other active messages (like success or error from add/upload)
+                const currentMessageType = messageBox.classList.contains('bg-red-100') ? 'error' :
+                                           messageBox.classList.contains('bg-green-100') ? 'success' :
+                                           'info'; // Default to 'info' if no specific type is active
+                if (currentMessageType === 'info' || currentMessageType === 'warning') { // Only hide if it's a general info or previous warning
+                     messageBox.classList.remove('show');
+                }
+            }
+        }
+
+        /**
+         * Renders the weekly picks history table.
+         */
+        function renderWeeklyPicksHistory() {
+            weeklyPicksHistoryTableBody.innerHTML = ''; // Clear existing
+            if (weeklyPicksHistory.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="6" class="text-center text-gray-500 py-4">No history yet. Save your first week's picks!</td>`;
+                weeklyPicksHistoryTableBody.appendChild(row);
+                return;
+            }
+
+            // Sort history by date, newest first
+            const sortedHistory = [...weeklyPicksHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            sortedHistory.forEach(week => {
+                const row = document.createElement('tr');
+                const weekDate = new Date(week.date);
+                // Look up current song titles using UUIDs
+                const songTitles = week.songUuids.map(uuid => {
+                    const song = getSongByUUID(uuid);
+                    return song ? song.title : "[Song Not Found]"; // Handle deleted songs
+                });
+
+                row.innerHTML = `
+                    <td>${formatDate(weekDate)}</td>
+                    ${songTitles.map(title => `<td>${escapeCsv(title)}</td>`).join('')}
+                `;
+                weeklyPicksHistoryTableBody.appendChild(row);
+            });
+        }
+
+        /**
+         * Renders the most recently saved weekly pick in a dedicated section.
+         */
+        function renderLastSavedPick() {
+            lastSavedPickListElement.innerHTML = ''; // Clear previous list
+            lastSavedPickDisplay.classList.add('hidden'); // Hide by default
+
+            if (weeklyPicksHistory.length === 0) {
+                return; // No history, nothing to display
+            }
+
+            // Get the absolute latest pick (history is already sorted by date, newest first)
+            const latestPick = weeklyPicksHistory.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
+            if (latestPick) {
+                lastSavedPickDateElement.textContent = formatDate(new Date(latestPick.date));
+                latestPick.songUuids.forEach(uuid => {
+                    const song = getSongByUUID(uuid);
+                    const listItem = document.createElement('li');
+                    listItem.textContent = song ? `${song.title} by ${song.artist || 'Unknown Artist'}` : "[Song Not Found]"; // Handle blank artist
+                    lastSavedPickListElement.appendChild(listItem);
+                });
+                lastSavedPickDisplay.classList.remove('hidden');
+            }
+        }
+
+        /**
+         * Renders the input fields for configuring song slot groups in the Settings tab.
+         */
+        function renderSettingsInputs() {
+            slotSettingsArea.innerHTML = ''; // Clear existing inputs
+
+            for (let i = 0; i < NUM_SONG_PICKS; i++) {
+                const slotGroupDiv = document.createElement('div');
+                slotGroupDiv.className = 'settings-slot-group';
+
+                const label = document.createElement('label');
+                label.setAttribute('for', `slotGroups${i + 1}`);
+                label.textContent = `Song ${i + 1} Allowed Groups:`;
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = `slotGroups${i + 1}`;
+                input.className = 'rounded-md focus:ring-indigo-500 focus:border-indigo-500';
+                input.placeholder = 'e.g., Worship, Upbeat, Instrumental';
+
+                // Pre-fill with current settings
+                if (allowedGroupsForSlots[i] && allowedGroupsForSlots[i].length > 0) {
+                    input.value = allowedGroupsForSlots[i].join(', ');
+                } else {
+                    input.value = ''; // Empty means all songs allowed
+                }
+
+                const hint = document.createElement('p');
+                hint.className = 'hint';
+                hint.textContent = 'Separate multiple groups with commas. Leave empty for all songs.';
+
+                slotGroupDiv.appendChild(label);
+                slotGroupDiv.appendChild(input);
+                slotGroupDiv.appendChild(hint);
+                slotSettingsArea.appendChild(slotGroupDiv);
+            }
+        }
+
+
+        // --- Tab Management ---
+        function showTab(tabId) {
+            // Deactivate all sections and buttons
+            sections.forEach(section => section.classList.remove('active'));
+            tabButtons.forEach(button => button.classList.remove('active'));
+
+            // Activate the selected section and button
+            document.getElementById(`${tabId}-tab`).classList.add('active');
+            document.querySelector(`.tab-button[data-tab="${tabId}"]`).classList.add('active');
+        }
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                showTab(button.dataset.tab);
+            });
+        });
+
+
+        // --- Event Handlers ---
+
+        /**
+         * Handles saving the current week's song picks.
+         */
+        savePicksBtn.addEventListener('click', () => { // Removed async
+            const currentWeekStartDate = new Date(weekStartDateInput.value);
+            const selectedSongUuids = [];
+            let allSongsSelected = true;
+            let hasRecentRepeats = false;
+
+            for (let i = 0; i < NUM_SONG_PICKS; i++) {
+                const select = document.getElementById(`songSelect${i + 1}`);
+                const songUuid = select.value;
+
+                if (!songUuid) {
+                    allSongsSelected = false;
+                    break;
+                }
+                selectedSongUuids.push(songUuid);
+
+                if (isSongPlayedRecently(songUuid, currentWeekStartDate)) {
+                    select.classList.add('highlight-repeat'); // Ensure highlight is applied immediately
+                    hasRecentRepeats = true;
+                } else {
+                    select.classList.remove('highlight-repeat'); // Remove highlight if no longer a repeat
+                }
+            }
+
+            if (!allSongsSelected) {
+                showMessage("Please select 5 songs before saving.", "error");
+                return;
+            }
+
+            if (hasRecentRepeats) {
+                const confirmSave = window.confirm("Some selected songs have been played recently. Do you still want to save?");
+                if (!confirmSave) {
+                    return; // Stop saving if user cancels
+                }
+            }
+
+            // Add to history (store UUIDs)
+            weeklyPicksHistory.push({
+                date: currentWeekStartDate.toISOString().split('T')[0], // Store as ISO-MM-DD string
+                songUuids: selectedSongUuids
+            });
+
+            saveToLocalStorage('weeklyPicksHistory', weeklyPicksHistory); // Save directly to local storage
+            showMessage("Weekly picks saved successfully!", "success");
+            renderWeeklyPicksHistory(); // Re-render history table
+            renderLastSavedPick();     // Re-render last pick display
+            clearCurrentPicks();       // Clear current selections after saving
+        });
+
+        /**
+         * Handles clearing the current week's song picks.
+         */
+        clearPicksBtn.addEventListener('click', () => {
+            clearCurrentPicks();
+            showMessage("Current picks cleared.", "info");
+        });
+
+        /**
+         * Clears the current song selection dropdowns.
+         */
+        function clearCurrentPicks() {
+            for (let i = 0; i < NUM_SONG_PICKS; i++) {
+                const select = document.getElementById(`songSelect${i + 1}`);
+                const typeDisplay = document.getElementById(`songType${i + 1}`);
+                select.value = ""; // Reset dropdown
+                select.classList.remove('highlight-repeat'); // Remove highlight
+                typeDisplay.textContent = ""; // Clear type display
+            }
+            weekStartDateInput.value = formatDate(new Date()); // Reset date to today
+            lastPickInfoElement.classList.add('hidden'); // Hide info when cleared
+            messageBox.classList.remove('show'); // Hide any messages
+        }
+
+        // Event listener for date input changes to re-check repeats
+        weekStartDateInput.addEventListener('change', checkAllCurrentPicksForRepeats);
+
+        /**
+         * Handles adding a new song from the input fields.
+         */
+        addSongBtn.addEventListener('click', () => { // Removed async
+            const title = newSongTitleInput.value.trim();
+            const artist = newSongArtistInput.value.trim();
+            const groupsString = newSongGroupsInput.value.trim();
+
+            if (!title) {
+                showMessage("Song Title cannot be empty.", "error");
+                return;
+            }
+
+            // Normalize groups: split by comma, trim spaces, filter out empty strings
+            const groups = groupsString.split(',').map(g => g.trim()).filter(g => g !== '');
+
+            // Check for duplicate song title (case-insensitive)
+            if (getSongByTitle(title)) {
+                showMessage(`Song "${title}" already exists in the library.`, "warning");
+                return;
+            }
+
+            const newSong = { uuid: generateUUID(), title, artist, groups };
+            songLibrary.push(newSong);
+            saveToLocalStorage('songLibrary', songLibrary); // Save directly to local storage
+            showMessage(`Song "${title}" added successfully!`, "success");
+
+            // Clear input fields
+            newSongTitleInput.value = '';
+            newSongArtistInput.value = '';
+            newSongGroupsInput.value = '';
+            renderSongLibrary(); // Re-render library table
+            updateAllSongDropdowns(); // Update dropdowns
+        });
+
+        /**
+         * Parses CSV content for song library and adds/updates songs.
+         * Assumes CSV format: Title,Artist,Groups (Groups comma-separated in one cell)
+         * Skips header row.
+         */
+        function parseSongLibraryCSV(csvText) {
+            const lines = csvText.split('\n').filter(line => line.trim() !== '');
+            if (lines.length === 0) {
+                showMessage("CSV file is empty.", "warning");
+                return;
+            }
+
+            const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+            const titleIndex = header.indexOf('title');
+            const artistIndex = header.indexOf('artist');
+            const groupsIndex = header.indexOf('groups');
+
+            if (titleIndex === -1 || artistIndex === -1 || groupsIndex === -1) {
+                showMessage("CSV header must contain 'Title', 'Artist', and 'Groups'.", "error");
+                return;
+            }
+
+            let addedCount = 0;
+            let updatedCount = 0;
+            let skippedCount = 0;
+
+            // Create a temporary copy of the library to modify
+            let tempSongLibrary = [...songLibrary];
+
+            for (let i = 1; i < lines.length; i++) { // Start from 1 to skip header
+                const values = lines[i].split(',');
+                const title = (values[titleIndex] || '').trim();
+                const artist = (values[artistIndex] || '').trim();
+                const groupsString = (values[groupsIndex] || '').trim();
+
+                if (!title) { // Title is mandatory for identification
+                    console.warn(`Skipping row ${i + 1} due to missing Title: ${lines[i]}`);
+                    skippedCount++;
+                    continue;
+                }
+
+                const groups = groupsString.split(',').map(g => g.trim()).filter(g => g !== '');
+
+                const existingSongIndex = tempSongLibrary.findIndex(song => song.title.toLowerCase() === title.toLowerCase());
+
+                if (existingSongIndex !== -1) {
+                    // Song exists, update it
+                    tempSongLibrary[existingSongIndex].artist = artist;
+                    tempSongLibrary[existingSongIndex].groups = groups; // Groups are replaced
+                    updatedCount++;
+                } else {
+                    // Song does not exist, add it
+                    tempSongLibrary.push({ uuid: generateUUID(), title, artist, groups });
+                    addedCount++;
+                }
+            }
+
+            songLibrary = tempSongLibrary; // Update the global songLibrary
+            saveToLocalStorage('songLibrary', songLibrary); // Save directly to local storage
+
+            let message = '';
+            if (addedCount > 0) message += `${addedCount} song(s) added. `;
+            if (updatedCount > 0) message += `${updatedCount} song(s) updated. `;
+            if (skippedCount > 0) message += `${skippedCount} song(s) skipped (missing title).`;
+
+            if (message === '') {
+                showMessage("No valid songs found in CSV to add or update.", "warning");
+            } else {
+                showMessage(message.trim(), "success");
+            }
+            renderSongLibrary(); // Re-render library table
+            updateAllSongDropdowns(); // Update dropdowns
+        }
+
+        /**
+         * Handles CSV file upload for song library.
+         */
+        uploadCsvBtn.addEventListener('click', () => {
+            const file = csvFileInput.files[0];
+            if (!file) {
+                showMessage("Please select a CSV file to upload.", "error");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    parseSongLibraryCSV(e.target.result);
+                    csvFileInput.value = ''; // Clear file input
+                } catch (error) {
+                    console.error("Error processing song library CSV file:", error);
+                    showMessage("Error processing song library CSV file. Please check its format.", "error");
+                }
+            };
+            reader.onerror = () => {
+                showMessage("Failed to read file.", "error");
+            };
+            reader.readAsText(file);
+        });
+
+        /**
+         * Exports the current song library to a CSV file.
+         */
+        downloadLibraryCsvBtn.addEventListener('click', () => {
+            if (songLibrary.length === 0) {
+                showMessage("Song library is empty. Nothing to download.", "warning");
+                return;
+            }
+
+            let csvContent = "Title,Artist,Groups\n";
+            songLibrary.forEach(song => {
+                const row = [
+                    escapeCsv(song.title),
+                    escapeCsv(song.artist),
+                    escapeCsv(song.groups.join(', ')) // Groups as comma-separated string in one cell
+                ];
+                csvContent += row.join(',') + "\n";
+            });
+
+            downloadCSV("song_library.csv", csvContent);
+            showMessage("Song library downloaded as CSV.", "success");
+        });
+
+        /**
+         * Exports the weekly picks history to a CSV file.
+         */
+        downloadHistoryCsvBtn.addEventListener('click', () => {
+            if (weeklyPicksHistory.length === 0) {
+                showMessage("Weekly picks history is empty. Nothing to download.", "warning");
+                return;
+            }
+
+            let csvContent = "Week,Song 1,Song 2,Song 3,Song 4,Song 5\n"; // Header for 5 songs
+            weeklyPicksHistory.forEach(week => {
+                const weekDate = week.date;
+                const songTitles = week.songUuids.map(uuid => {
+                    const song = getSongByUUID(uuid);
+                    return song ? song.title : "[Song Not Found]";
+                });
+
+                const row = [
+                    escapeCsv(weekDate),
+                    ...songTitles.map(title => escapeCsv(title))
+                ];
+                csvContent += row.join(',') + "\n";
+            });
+
+            downloadCSV("weekly_picks_history.csv", csvContent);
+            showMessage("Weekly picks history downloaded as CSV.", "success");
+        });
+
+        /**
+         * Parses CSV content for weekly picks history and adds/updates it.
+         * Assumes CSV format: Week (YYYY-MM-DD), Song 1, Song 2, ...
+         * Matches songs by title to existing library.
+         */
+        function parseHistoryCSV(csvText) {
+            const lines = csvText.split('\n').filter(line => line.trim() !== '');
+            if (lines.length === 0) {
+                showMessage("History CSV file is empty.", "warning");
+                return;
+            }
+
+            const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+            const weekIndex = header.indexOf('week');
+            const songTitleIndices = [];
+            for (let i = 1; i <= NUM_SONG_PICKS; i++) {
+                const songIndex = header.indexOf(`song ${i}`);
+                if (songIndex !== -1) {
+                    songTitleIndices.push(songIndex);
+                }
+            }
+
+            if (weekIndex === -1 || songTitleIndices.length === 0) {
+                showMessage("History CSV header must contain 'Week' and at least one 'Song X' column.", "error");
+                return;
+            }
+
+            let addedWeeks = 0;
+            let updatedWeeks = 0;
+            let skippedWeeks = 0;
+
+            let tempHistory = [...weeklyPicksHistory]; // Work on a copy
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',');
+                const weekDate = (values[weekIndex] || '').trim();
+
+                if (!weekDate || !/^\d{4}-\d{2}-\d{2}$/.test(weekDate)) {
+                    console.warn(`Skipping row ${i + 1} due to invalid Week date format: ${lines[i]}`);
+                    skippedWeeks++;
+                    continue;
+                }
+
+                const songUuidsForWeek = [];
+                let hasMissingSongs = false;
+
+                for (const idx of songTitleIndices) {
+                    const songTitle = (values[idx] || '').trim();
+                    if (songTitle) {
+                        const song = getSongByTitle(songTitle);
+                        if (song) {
+                            songUuidsForWeek.push(song.uuid);
+                        } else {
+                            console.warn(`Song "${songTitle}" not found in library for week ${weekDate}.`);
+                            songUuidsForWeek.push("[Song Not Found]"); // Placeholder for missing songs
+                            hasMissingSongs = true;
+                        }
+                    } else {
+                        songUuidsForWeek.push(""); // Empty slot
+                    }
+                }
+
+                // Find if this week already exists in history
+                const existingWeekIndex = tempHistory.findIndex(week => week.date === weekDate);
+
+                if (existingWeekIndex !== -1) {
+                    // Update existing week
+                    tempHistory[existingWeekIndex].songUuids = songUuidsForWeek;
+                    updatedWeeks++;
+                } else {
+                    // Add new week
+                    tempHistory.push({ date: weekDate, songUuids: songUuidsForWeek });
+                    addedWeeks++;
+                }
+
+                if (hasMissingSongs) {
+                    showMessage(`Some songs for week ${weekDate} were not found in your library. They will appear as "[Song Not Found]".`, "warning");
+                }
+            }
+
+            weeklyPicksHistory = tempHistory; // Update global history
+            // Sort history after import to maintain order
+            weeklyPicksHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            saveToLocalStorage('weeklyPicksHistory', weeklyPicksHistory); // Save directly to local storage
+
+            let message = '';
+            if (addedWeeks > 0) message += `${addedWeeks} week(s) added. `;
+            if (updatedWeeks > 0) message += `${updatedWeeks} week(s) updated. `;
+            if (skippedWeeks > 0) message += `${skippedWeeks} week(s) skipped (invalid date).`;
+
+            if (message === '') {
+                showMessage("No valid history entries found in CSV to add or update.", "warning");
+            } else {
+                showMessage(message.trim(), "success");
+            }
+            renderWeeklyPicksHistory(); // Re-render history table
+            renderLastSavedPick();     // Re-render last pick display
+            initializeCurrentWeekSelection(); // Re-initialize current week to reflect new history
+        }
+
+        /**
+         * Handles CSV file upload for history.
+         */
+        uploadHistoryCsvBtn.addEventListener('click', () => {
+            const file = historyCsvFileInput.files[0];
+            if (!file) {
+                showMessage("Please select a History CSV file to upload.", "error");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    parseHistoryCSV(e.target.result);
+                    historyCsvFileInput.value = ''; // Clear file input
+                } catch (error) {
+                    console.error("Error processing history CSV file:", error);
+                    showMessage("Error processing history CSV file. Please check its format.", "error");
+                }
+            };
+            reader.onerror = () => {
+                showMessage("Failed to read file.", "error");
+            };
+            reader.readAsText(file);
+        });
+
+
+        // --- Edit/Delete Song Functions ---
+
+        /**
+         * Opens the edit song modal and populates it with song data.
+         * @param {string} uuid - The UUID of the song to edit.
+         */
+        function openEditModal(uuid) {
+            const songToEdit = getSongByUUID(uuid);
+            if (!songToEdit) {
+                showMessage("Song not found for editing.", "error");
+                return;
+            }
+
+            editSongUuidInput.value = songToEdit.uuid;
+            editSongTitleInput.value = songToEdit.title;
+            editSongArtistInput.value = songToEdit.artist;
+            editSongGroupsInput.value = songToEdit.groups.join(', ');
+            editSongModal.classList.add('show');
+        }
+
+        /**
+         * Closes the edit song modal.
+         */
+        function closeEditModal() {
+            editSongModal.classList.remove('show');
+            // Clear inputs just in case
+            editSongUuidInput.value = '';
+            editSongTitleInput.value = '';
+            editSongArtistInput.value = '';
+            editSongGroupsInput.value = '';
+        }
+
+        /**
+         * Handles saving changes from the edit song modal.
+         */
+        saveEditBtn.addEventListener('click', () => { // Removed async
+            const uuid = editSongUuidInput.value;
+            const newTitle = editSongTitleInput.value.trim();
+            const newArtist = editSongArtistInput.value.trim(); // Artist can be blank
+            const newGroupsString = editSongGroupsInput.value.trim();
+
+            if (!newTitle) {
+                showMessage("Song Title cannot be empty.", "error");
+                return;
+            }
+
+            const newGroups = newGroupsString.split(',').map(g => g.trim()).filter(g => g !== '');
+
+            const songIndex = songLibrary.findIndex(song => song.uuid === uuid);
+            if (songIndex === -1) {
+                showMessage("Error: Song not found in library for update.", "error");
+                closeEditModal();
+                return;
+            }
+
+            // Check for title duplication if title is changed
+            const existingSongWithSameTitle = getSongByTitle(newTitle);
+            if (existingSongWithSameTitle && existingSongWithSameTitle.uuid !== uuid) {
+                showMessage(`A song with the title "${newTitle}" already exists.`, "error");
+                return;
+            }
+
+            songLibrary[songIndex].title = newTitle;
+            songLibrary[songIndex].artist = newArtist;
+            songLibrary[songIndex].groups = newGroups;
+
+            saveToLocalStorage('songLibrary', songLibrary); // Save directly to local storage
+            showMessage(`Song "${newTitle}" updated successfully!`, "success");
+            closeEditModal();
+            renderSongLibrary(); // Re-render library table
+            updateAllSongDropdowns(); // Update dropdowns
+        });
+
+        /**
+         * Handles deleting a song.
+         * @param {string} uuid - The UUID of the song to delete.
+         */
+        function deleteSong(uuid) {
+            const songToDelete = getSongByUUID(uuid);
+            if (!songToDelete) {
+                showMessage("Song not found for deletion.", "error");
+                return;
+            }
+
+            // Confirmation for deletion
+            const confirmDelete = window.confirm(`Are you sure you want to delete "${songToDelete.title}"? This cannot be undone.`);
+            if (!confirmDelete) {
+                return;
+            }
+
+            songLibrary = songLibrary.filter(song => song.uuid !== uuid);
+            saveToLocalStorage('songLibrary', songLibrary); // Save directly to local storage
+            showMessage(`Song "${songToDelete.title}" deleted successfully!`, "success");
+            closeEditModal(); // Close modal if open after deletion
+            renderSongLibrary(); // Re-render library table
+            updateAllSongDropdowns(); // Update dropdowns
+        }
+
+        cancelEditBtn.addEventListener('click', closeEditModal);
+        deleteSongBtn.addEventListener('click', () => {
+            const uuidToDelete = editSongUuidInput.value;
+            deleteSong(uuidToDelete);
+        });
+
+        // --- Settings Tab Event Handler ---
+        saveSettingsBtn.addEventListener('click', () => { // Removed async
+            const newSettings = [];
+            let isValid = true;
+            for (let i = 0; i < NUM_SONG_PICKS; i++) {
+                const input = document.getElementById(`slotGroups${i + 1}`);
+                if (input) {
+                    // Split by comma, trim spaces, filter out empty strings
+                    const groups = input.value.split(',').map(g => g.trim()).filter(g => g !== '');
+                    newSettings.push(groups);
+                } else {
+                    // Should not happen if NUM_SONG_PICKS matches UI elements
+                    newSettings.push([]);
+                    console.warn(`Settings input for slot ${i+1} not found.`);
+                }
+            }
+
+            if (isValid) {
+                allowedGroupsForSlots = newSettings;
+                saveToLocalStorage('allowedGroupsForSlots', allowedGroupsForSlots); // Save directly to local storage
+                showMessage("Song slot settings saved successfully!", "success");
+                renderSettingsInputs(); // Re-render settings inputs
+                updateAllSongDropdowns(); // Update dropdowns to reflect new settings
+            }
+        });
+
+        // --- Initialization ---
+        // Call initializeApp directly on DOMContentLoaded, no async needed as no awaits are left
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
+    </script>
+</body>
+</html>
